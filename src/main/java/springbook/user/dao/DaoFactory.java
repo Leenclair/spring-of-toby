@@ -28,7 +28,7 @@ public class DaoFactory {
         SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
 
         dataSource.setDriverClass(Driver.class);
-        dataSource.setUrl("jdbc:h2:tcp://localhost/~/test");
+        dataSource.setUrl("jdbc:h2:tcp://localhost/~/testcase");
         dataSource.setUsername("sa");
         dataSource.setPassword("");
 

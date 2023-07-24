@@ -17,8 +17,12 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(locations = "/test-applicationContext.xml")
 class UserDaoTest {
 
+    @Autowired
+    ApplicationContext context;
     private UserDao userDao;
     private User user1;
     private User user2;
@@ -30,9 +34,7 @@ class UserDaoTest {
         this.user2 = new User("leenclair2", "링클레어2","test2");
         this.user3 = new User("leenclair3", "링클레어3","test3");
 
-        userDao = new UserDao();
-        DataSource dataSource = new SingleConnectionDataSource("jdbc:h2:tcp://localhost/~/testcase", "sa", "", true);
-        userDao.setDataSource(dataSource);
+        this.userDao = this.context.getBean("userDao", UserDao.class);
     }
 
     @Test

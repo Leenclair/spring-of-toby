@@ -16,7 +16,7 @@ public class UserDaoTestClass {
     public static void main(String[] args) throws SQLException {
 
 //        ApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
-        ApplicationContext context = new GenericXmlApplicationContext("applicationContext.xml");
+        ApplicationContext context = new GenericXmlApplicationContext("test-applicationContext.xml");
         UserDao userDao = context.getBean("userDao", UserDao.class);
 
         User user = new User();
