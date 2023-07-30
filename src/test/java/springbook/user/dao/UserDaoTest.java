@@ -5,9 +5,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
+import org.springframework.jdbc.support.SQLExceptionTranslator;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import springbook.user.domain.User;
@@ -25,7 +27,9 @@ class UserDaoTest {
 
     @Autowired
     ApplicationContext context;
-    private UserDao userDao;
+    private UserDaoJdbc userDao;
+    @Autowired
+    private DataSource dataSource;
     private User user1;
     private User user2;
     private User user3;
@@ -36,7 +40,7 @@ class UserDaoTest {
         this.user2 = new User("leenclair2", "링클레어2","test2");
         this.user3 = new User("leenclair3", "링클레어3","test3");
 
-        this.userDao = this.context.getBean("userDao", UserDao.class);
+        this.userDao = this.context.getBean("userDao", UserDaoJdbc.class);
     }
 
     @Test
@@ -105,6 +109,31 @@ class UserDaoTest {
         checkSameUser(user2, users3.get(1));
         checkSameUser(user3, users3.get(2));
 
+    }
+
+    @Test
+    void duplicateKey(){
+        userDao.deleteAll();
+
+        userDao.add(user1);
+        assertThrows(DuplicateKeyException.class, () -> {
+            userDao.add(user1);
+        });
+    }
+
+    @Test
+    void sqlExceptionTranslate(){
+        userDao.deleteAll();
+
+        try{
+            userDao.add(user1);
+            userDao.add(user1);
+        }catch (DuplicateKeyException ex){
+            SQLException sqlEx = (SQLException) ex.getRootCause();
+            SQLExceptionTranslator set = new SQLErrorCodeSQLExceptionTranslator(this.dataSource);
+
+            assertThat(set.translate(null, null, sqlEx)).isInstanceOf(DuplicateKeyException.class);
+        }
     }
 
     private void checkSameUser(User user1, User user2){
