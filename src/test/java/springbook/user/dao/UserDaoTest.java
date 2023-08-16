@@ -37,9 +37,9 @@ class UserDaoTest {
 
     @BeforeEach
     void setup(){
-        this.user1 = new User("leenclair1", "링클레어1","test1", Level.BASIC, 1, 0);
-        this.user2 = new User("leenclair2", "링클레어2","test2", Level.SILVER, 55, 10);
-        this.user3 = new User("leenclair3", "링클레어3","test3", Level.GOLD, 100, 40);
+        this.user1 = new User("leenclair1", "링클레어1","test1", "useradmin@ksug.org", Level.BASIC, 1, 0);
+        this.user2 = new User("leenclair2", "링클레어2","test2", "useradmin@ksug.org", Level.SILVER, 55, 10);
+        this.user3 = new User("leenclair3", "링클레어3","test3", "useradmin@ksug.org", Level.GOLD, 100, 40);
 
         this.userDao = this.context.getBean("userDao", UserDaoJdbc.class);
     }
@@ -152,6 +152,7 @@ class UserDaoTest {
 
         user1.setName("창수리");
         user1.setPassword("spring");
+        user1.setEmail("useradmin@ksug.org");
         user1.setLevel(Level.GOLD);
         user1.setLogin(1000);
         user1.setRecommend(999);

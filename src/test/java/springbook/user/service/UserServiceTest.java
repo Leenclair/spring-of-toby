@@ -11,6 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.mail.MailException;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -19,6 +23,7 @@ import springbook.user.domain.Level;
 import springbook.user.domain.User;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,6 +40,8 @@ public class UserServiceTest {
     UserService userService;
 //    @Autowired
 //    DataSource dataSource;
+    @Autowired
+    MailSender mailSender;
 
     @Autowired
     PlatformTransactionManager transactionManager;
@@ -47,11 +54,11 @@ public class UserServiceTest {
     @BeforeEach
     void setUp(){
         users = Arrays.asList(
-                new User("leenclair", "링클레어", "p1", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER-1, 0),
-                new User("joy", "조이", "p2", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER, 0),
-                new User("spring", "스프링", "p3", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD-1),
-                new User("toby", "토비", "p4", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD),
-                new User("young", "김영한", "p5", Level.GOLD, 100, Integer.MAX_VALUE)
+                new User("leenclair", "링클레어", "p1", "useradmin@ksug.org", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER-1, 0),
+                new User("joy", "조이", "p2", "useradmin@ksug.org", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER, 0),
+                new User("spring", "스프링", "p3", "useradmin@ksug.org", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD-1),
+                new User("toby", "토비", "p4", "useradmin@ksug.org", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD),
+                new User("young", "김영한", "p5", "useradmin@ksug.org", Level.GOLD, 100, Integer.MAX_VALUE)
         );
         this.userDao = this.context.getBean("userDao", UserDaoJdbc.class);
     }
@@ -79,6 +86,29 @@ public class UserServiceTest {
     }
 
     @Test
+    @DirtiesContext
+    void upgradeLevelsV2() throws Exception{
+        userDao.deleteAll();
+        for(User user : users) userDao.add(user);
+
+        MockMailSender mockMailSender = new MockMailSender();
+        userService.setMailSender(mockMailSender);
+
+        userService.upgradeLevelsV4();
+
+        checkLevelUpgraded(users.get(0), false);
+        checkLevelUpgraded(users.get(1), true);
+        checkLevelUpgraded(users.get(2), false);
+        checkLevelUpgraded(users.get(3), true);
+        checkLevelUpgraded(users.get(4), false);
+
+        List<String> request = mockMailSender.getRequests();
+        assertThat(request.size()).isEqualTo(2);
+        assertThat(request.get(0)).isEqualTo(users.get(1).getEmail());
+        assertThat(request.get(1)).isEqualTo(users.get(3).getEmail());
+    }
+
+    @Test
     void add(){
         userDao.deleteAll();
 
@@ -102,6 +132,7 @@ public class UserServiceTest {
         testUserService.setUserDao(userDao);
 //        testUserService.setDataSource(this.dataSource);
         testUserService.setTransactionManager(transactionManager);
+        testUserService.setMailSender(mailSender);
 
         userDao.deleteAll();
         for(User user : users) userDao.add(user);
@@ -150,5 +181,23 @@ public class UserServiceTest {
         }
     }
 
+    static class MockMailSender implements MailSender{
+
+        private List<String> requests = new ArrayList<String>();
+
+        public List<String> getRequests() {
+            return requests;
+        }
+
+        @Override
+        public void send(SimpleMailMessage mailMessage) throws MailException {
+            requests.add(mailMessage.getTo()[0]);
+        }
+
+        @Override
+        public void send(SimpleMailMessage... mailMessage) throws MailException {
+
+        }
+    }
 
 }
