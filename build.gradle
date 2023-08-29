@@ -35,6 +35,9 @@ dependencies {
 
 	//mail
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	//mockito
+	testImplementation 'org.mockito:mockito-core:5.2.0'
 }
 
 tasks.named('test') {
